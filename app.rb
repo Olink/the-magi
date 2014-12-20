@@ -2,8 +2,24 @@ require 'sinatra'
 require 'active_support/core_ext'
 require_relative 'Score'
 require 'json'
+require 'filewatcher'
 
 class Magi < Sinatra::Base
+  
+  def initialize()
+    @shortcut_filename = 'team_shortcuts.json'
+    @shortcut_routes = {}
+    
+    unless File.exist?(shortcut_filename)
+      File.open(shortcut_filename, 'w') {|f| f.write('{}') }
+    end
+  
+    FileWatcher.new([@shortcut_filename]).watch do |filename|
+      shortcut_file = File.read(@shortcut_filename)
+      @shortcut_routes = JSON.parse(shortcut_file)
+      puts "Updated " + filename
+    end
+  end
 
   get '/rhs/?' do
     redirect to('/teams/07-0152,07-0327,07-1260,07-1262,07-1964,07-0158,07-0639,07-1818')
@@ -18,16 +34,10 @@ class Magi < Sinatra::Base
   end
   
   get '/:shortcut/?' do
-    shortcut_filename = 'team_shortcuts.json'
-    begin
-      shortcut_file = File.read(shortcut_filename)
-      shortcut_routes = JSON.parse(shortcut_file)
-      if shortcut_routes.has_key?(params[:shortcut])
-        redirect to('/teams/' + shortcut_routes[params[:shortcut]])
-      end
-    rescue
-      File.open(shortcut_filename, 'w') {|f| f.write('{}') }
-      
+    if @shortcut_routes.has_key?(params[:shortcut])
+      redirect to('/teams/' + @shortcut_routes[params[:shortcut]])
+    end
+
     return erb :error, :locals => {:error => "This team short cut does not exist, have you contacted us?"}
   end
     
