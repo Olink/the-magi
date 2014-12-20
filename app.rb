@@ -1,6 +1,7 @@
 require 'sinatra'
 require 'active_support/core_ext'
 require_relative 'Score'
+require 'json'
 
 class Magi < Sinatra::Base
 
@@ -15,8 +16,22 @@ class Magi < Sinatra::Base
   get '/cchs/?' do
     redirect to('/teams/07-1863,07-2427,07-1864,07-1975')
   end
-
-  get '/:division/?' do
+  
+  get '/:shortcut/?' do
+    shortcut_filename = 'team_shortcuts.json'
+    begin
+      shortcut_file = File.read(shortcut_filename)
+      shortcut_routes = JSON.parse(shortcut_file)
+      if shortcut_routes.has_key?(params[:shortcut])
+        redirect to('/teams/' + shortcut_routes[params[:shortcut]])
+      end
+    rescue
+      File.open(shortcut_filename, 'w') {|f| f.write('{}') }
+      
+    return erb :error, :locals => {:error => "This team short cut does not exist, have you contacted us?"}
+  end
+    
+  get '/division/:division/?' do
     unless params[:division] == 'all-service' || params[:division] == 'open'
       return erb :error, :locals => {:error => "Invalid division specified. Must either be 'open' or 'all-service'."}
     end
@@ -31,7 +46,7 @@ class Magi < Sinatra::Base
   end
 
   get '/' do
-    redirect to ('/open')
+    redirect to ('/division/open')
   end
 
   configure do
