@@ -10,8 +10,8 @@ class Magi < Sinatra::Base
     @shortcut_filename = 'team_shortcuts.json'
     @shortcut_routes = {}
     
-    unless File.exist?(shortcut_filename)
-      File.open(shortcut_filename, 'w') {|f| f.write('{}') }
+    unless File.exist?(@shortcut_filename)
+      File.open(@shortcut_filename, 'w') {|f| f.write('{}') }
     end
   
     FileWatcher.new([@shortcut_filename]).watch do |filename|
